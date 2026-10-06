@@ -12,8 +12,9 @@ export const TimelineTrackHeaders: React.FC = () => {
             sx={{
                 width: 140,
                 flexShrink: 0,
-                borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRight: '1px solid rgba(255, 255, 255, 0.12)',
                 bgcolor: '#0e1117',
+                boxShadow: '3px 0 8px rgba(0, 0, 0, 0.45)',
                 zIndex: 5,
                 display: 'flex',
                 flexDirection: 'column'

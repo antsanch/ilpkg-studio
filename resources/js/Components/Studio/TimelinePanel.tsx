@@ -107,13 +107,27 @@ export const TimelinePanel: React.FC = () => {
 
     const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        const clickX = e.clientX - rect.left + (tracksContainerRef.current?.scrollLeft || 0);
+        const clickX = e.clientX - rect.left;
         const newTime = Math.max(0, Math.min(clickX / zoomLevel, duration));
         setCurrentTime(newTime);
         if (audioRef.current) {
             audioRef.current.currentTime = newTime;
         }
     };
+
+    // Seguir el cabezal de reproducción si sale del área visible durante la reproducción activa
+    useEffect(() => {
+        if (!isPlaying || !tracksContainerRef.current) return;
+        const playheadX = currentTime * zoomLevel;
+        const container = tracksContainerRef.current;
+        const scrollLeft = container.scrollLeft;
+        const clientWidth = container.clientWidth;
+        if (playheadX > scrollLeft + clientWidth - 50) {
+            container.scrollLeft = playheadX - 100;
+        } else if (playheadX < scrollLeft) {
+            container.scrollLeft = Math.max(0, playheadX - 50);
+        }
+    }, [currentTime, isPlaying, zoomLevel]);
 
     return (
         <Paper
@@ -153,48 +167,64 @@ export const TimelinePanel: React.FC = () => {
                 onSetZoomLevel={setZoomLevel}
             />
 
-            {/* Contenedor de Pistas con Scroll Horizontal */}
+            {/* Contenedor Principal: Headers Fijos a la izquierda + Pistas Desplazables */}
             <Box
-                ref={tracksContainerRef}
                 sx={{
                     flex: 1,
                     display: 'flex',
-                    overflowX: 'auto',
-                    overflowY: 'hidden',
+                    overflow: 'hidden',
                     position: 'relative',
                     userSelect: 'none'
                 }}
             >
-                {/* Cabecera Fija de Nombres de Pistas */}
+                {/* Cabecera Fija de Nombres de Pistas (Inmóvil) */}
                 <TimelineTrackHeaders />
 
-                {/* Lienzo de Pistas Desplazable */}
+                {/* Contenedor con Scroll Horizontal Exclusivo para las Pistas */}
                 <Box
-                    onClick={handleTrackClick}
+                    ref={tracksContainerRef}
                     sx={{
-                        width: totalWidth,
-                        minWidth: '100%',
+                        flex: 1,
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
                         position: 'relative',
-                        bgcolor: 'rgba(0,0,0,0.2)',
-                        cursor: 'crosshair',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        '&::-webkit-scrollbar': { height: 6 },
+                        '&::-webkit-scrollbar-track': { bgcolor: 'rgba(0,0,0,0.3)' },
+                        '&::-webkit-scrollbar-thumb': {
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            borderRadius: 3,
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }
+                        }
                     }}
                 >
-                    {/* Pista 0: Regla Temporal */}
-                    <TimelineRuler duration={duration} zoomLevel={zoomLevel} />
+                    {/* Lienzo de Pistas Desplazable */}
+                    <Box
+                        onClick={handleTrackClick}
+                        sx={{
+                            width: totalWidth,
+                            minWidth: '100%',
+                            position: 'relative',
+                            bgcolor: 'rgba(0,0,0,0.2)',
+                            cursor: 'crosshair',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                    >
+                        {/* Pista 0: Regla Temporal */}
+                        <TimelineRuler duration={duration} zoomLevel={zoomLevel} />
 
-                    {/* Pistas de Contenido y Marcadores */}
-                    <TimelineTracks
-                        totalWidth={totalWidth}
-                        zoomLevel={zoomLevel}
-                        lesson={lesson}
-                        selectedEventId={selectedEventId}
-                        selectedCheckpointId={selectedCheckpointId}
-                        currentTime={currentTime}
-                        onSelectEvent={setSelectedEventId}
-                        onSelectCheckpoint={setSelectedCheckpointId}
-                    />
+                        {/* Pistas de Contenido y Marcadores */}
+                        <TimelineTracks
+                            totalWidth={totalWidth}
+                            zoomLevel={zoomLevel}
+                            lesson={lesson}
+                            selectedEventId={selectedEventId}
+                            selectedCheckpointId={selectedCheckpointId}
+                            currentTime={currentTime}
+                            onSelectEvent={setSelectedEventId}
+                            onSelectCheckpoint={setSelectedCheckpointId}
+                        />
+                    </Box>
                 </Box>
             </Box>
         </Paper>
