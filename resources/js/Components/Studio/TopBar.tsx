@@ -21,6 +21,8 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import ScienceIcon from '@mui/icons-material/Science';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import CloseIcon from '@mui/icons-material/Close';
 import { useStudioStore } from '../../Stores/useStudioStore';
 import { IlpkgPacker } from '../../Services/IlpkgPacker';
 import { ValidationDialog } from './ValidationDialog';
@@ -33,6 +35,7 @@ export const TopBar: React.FC = () => {
     const {
         manifest,
         lesson,
+        isDirty,
         activeEditorMode,
         setActiveEditorMode,
         undoStack,
@@ -41,11 +44,33 @@ export const TopBar: React.FC = () => {
         redo,
         validatePackage,
         loadPackageData,
+        createNewProject,
+        closeProject,
         audioBlobUrl,
         modelBlobUrl,
     } = useStudioStore();
 
     const validation = validatePackage();
+
+    const handleNewProject = () => {
+        if (isDirty) {
+            const confirmed = window.confirm(
+                'Hay cambios sin guardar en el proyecto actual. ¿Deseas descartarlos e iniciar un nuevo proyecto en blanco?'
+            );
+            if (!confirmed) return;
+        }
+        createNewProject();
+    };
+
+    const handleCloseProject = () => {
+        if (isDirty) {
+            const confirmed = window.confirm(
+                'Hay cambios sin guardar en el proyecto actual. ¿Deseas descartarlos y cerrar el paquete en memoria?'
+            );
+            if (!confirmed) return;
+        }
+        closeProject();
+    };
 
     const handleLoadDemo = async () => {
         try {
@@ -246,24 +271,57 @@ export const TopBar: React.FC = () => {
                         onChange={handleFileOpen}
                     />
 
-                    <Button 
-                        size="small" 
-                        variant="outlined" 
-                        startIcon={<ScienceIcon />}
-                        onClick={handleLoadDemo}
-                        sx={{ height: 28, fontSize: '0.75rem' }}
-                    >
-                        Cargar Demo
-                    </Button>
+                    <Tooltip title="Crear un nuevo proyecto en blanco (Ctrl+N)">
+                        <Button 
+                            size="small" 
+                            variant="outlined" 
+                            startIcon={<NoteAddIcon />}
+                            onClick={handleNewProject}
+                            sx={{ height: 28, fontSize: '0.75rem', textTransform: 'none' }}
+                        >
+                            Nuevo
+                        </Button>
+                    </Tooltip>
 
                     <Button 
                         size="small" 
                         variant="outlined" 
                         startIcon={<FolderOpenIcon />}
                         onClick={() => fileInputRef.current?.click()}
-                        sx={{ height: 28, fontSize: '0.75rem' }}
+                        sx={{ height: 28, fontSize: '0.75rem', textTransform: 'none' }}
                     >
                         Abrir .ilpkg
+                    </Button>
+
+                    {manifest && (
+                        <Tooltip title="Cerrar paquete y liberar memoria">
+                            <IconButton
+                                size="small"
+                                onClick={handleCloseProject}
+                                sx={{ 
+                                    color: 'text.secondary', 
+                                    p: 0.5,
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 1,
+                                    '&:hover': {
+                                        color: 'error.main',
+                                        borderColor: 'error.main',
+                                    }
+                                }}
+                            >
+                                <CloseIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
+                    <Button 
+                        size="small" 
+                        variant="outlined" 
+                        startIcon={<ScienceIcon />}
+                        onClick={handleLoadDemo}
+                        sx={{ height: 28, fontSize: '0.75rem', textTransform: 'none' }}
+                    >
+                        Demo
                     </Button>
 
                     <Button 
@@ -273,7 +331,7 @@ export const TopBar: React.FC = () => {
                         startIcon={isExporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon />}
                         disabled={!manifest || isExporting}
                         onClick={handleExport}
-                        sx={{ height: 28, fontSize: '0.75rem' }}
+                        sx={{ height: 28, fontSize: '0.75rem', textTransform: 'none' }}
                     >
                         Compilar .ilpkg
                     </Button>

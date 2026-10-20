@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import { Box, ThemeProvider, CssBaseline } from '@mui/material';
 import { studioTheme } from '../../Theme/studioTheme';
@@ -26,10 +26,13 @@ export default function ILPKGStudio({ initialLesson, userPermissions }: ILPKGStu
         modelBlobUrl 
     } = useStudioStore();
 
-    // Cargar automáticamente el paquete demo al montar si no hay datos
+    const hasInitializedRef = useRef(false);
+
+    // Cargar automáticamente el paquete demo únicamente al montar por primera vez si no hay datos
     useEffect(() => {
         let isMounted = true;
-        if (!manifest) {
+        if (!hasInitializedRef.current && !manifest) {
+            hasInitializedRef.current = true;
             IlpkgPacker.loadDefaultDemo().then((pkg) => {
                 if (isMounted && pkg) {
                     loadPackageData(pkg.manifest, pkg.lesson, pkg.audioBlobUrl, pkg.modelBlobUrl);

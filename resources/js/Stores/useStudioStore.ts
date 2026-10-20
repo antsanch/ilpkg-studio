@@ -65,6 +65,8 @@ export interface StudioState {
         audioUrl?: string, 
         modelUrl?: string
     ) => void;
+    createNewProject: (title?: string) => void;
+    closeProject: () => void;
     setManifest: (manifest: IlpkgManifest) => void;
     setLesson: (lesson: IlpkgLesson) => void;
     setIsDirty: (dirty: boolean) => void;
@@ -166,6 +168,111 @@ export const useStudioStore = create<StudioState>((set, get) => ({
             duration: lesson.timeline.duration || manifest.pedagogy.estimatedDurationSeconds || 120.0,
             loadedStructures: structures,
             meshStates: initialMeshStates,
+            currentTime: 0.0,
+            isPlaying: false,
+            selectedEventId: null,
+            selectedCheckpointId: null,
+            selectedMeshNames: [],
+            undoStack: [],
+            redoStack: [],
+            isDirty: false,
+        });
+    },
+
+    createNewProject: (title = 'Nueva Lección Anatómica') => {
+        const { audioBlobUrl, modelBlobUrl } = get();
+        if (audioBlobUrl) {
+            try { URL.revokeObjectURL(audioBlobUrl); } catch (_) {}
+        }
+        if (modelBlobUrl) {
+            try { URL.revokeObjectURL(modelBlobUrl); } catch (_) {}
+        }
+
+        const newManifest: IlpkgManifest = {
+            formatVersion: '1.0.0',
+            packageId: 'pkg_' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now()),
+            metadata: {
+                title,
+                slug: 'nueva-leccion-' + Date.now().toString(36),
+                authors: [{ name: 'Autor Clínico', role: 'Especialista' }],
+                discipline: 'Anatomía Humana',
+                language: 'es-MX',
+                license: 'CC-BY-NC-SA-4.0',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            },
+            pedagogy: {
+                estimatedDurationSeconds: 60.0,
+                passingScore: 80,
+                totalCheckpoints: 0,
+                maxAttemptsAllowed: 0,
+                allowScrubbingAfterPass: true,
+                learningObjectives: [],
+            },
+            runtimeRequirements: {
+                engineVersion: '>=1.0.0',
+                webglVersion: 2,
+                audioContext: true,
+            },
+            assets: {
+                entrypoint: 'lesson.json',
+                thumbnail: 'thumb.webp',
+                masterAudio: {
+                    path: 'audio/narration.wav',
+                    mimeType: 'audio/wav',
+                    duration: 60.0,
+                    sampleRate: 44100,
+                },
+                models3D: [],
+                staticSlides: [],
+            },
+        };
+
+        const newLesson: IlpkgLesson = {
+            version: '1.0.0',
+            timeline: {
+                duration: 60.0,
+                events: [],
+                checkpoints: [],
+            },
+        };
+
+        set({
+            manifest: newManifest,
+            lesson: newLesson,
+            audioBlobUrl: null,
+            modelBlobUrl: null,
+            duration: 60.0,
+            loadedStructures: [],
+            meshStates: {},
+            currentTime: 0.0,
+            isPlaying: false,
+            selectedEventId: null,
+            selectedCheckpointId: null,
+            selectedMeshNames: [],
+            undoStack: [],
+            redoStack: [],
+            isDirty: false,
+        });
+    },
+
+    closeProject: () => {
+        const { audioBlobUrl, modelBlobUrl } = get();
+        if (audioBlobUrl) {
+            try { URL.revokeObjectURL(audioBlobUrl); } catch (_) {}
+        }
+        if (modelBlobUrl) {
+            try { URL.revokeObjectURL(modelBlobUrl); } catch (_) {}
+        }
+
+        set({
+            manifest: null,
+            lesson: null,
+            audioBlobUrl: null,
+            modelBlobUrl: null,
+            duration: 60.0,
+            loadedStructures: [],
+            meshStates: {},
             currentTime: 0.0,
             isPlaying: false,
             selectedEventId: null,

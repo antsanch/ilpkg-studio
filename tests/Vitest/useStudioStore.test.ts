@@ -193,4 +193,27 @@ describe('useStudioStore (Zustand Central Workstation Store)', () => {
         expect(pathData).toBeDefined();
         expect(pathData).toContain('M 0');
     });
+
+    it('cierra el paquete en memoria y reinicia a un nuevo proyecto limpio', () => {
+        const store = useStudioStore.getState();
+
+        // 1. Cerrar proyecto
+        store.closeProject();
+        let state = useStudioStore.getState();
+        expect(state.manifest).toBeNull();
+        expect(state.lesson).toBeNull();
+        expect(state.loadedStructures.length).toBe(0);
+        expect(state.currentTime).toBe(0.0);
+
+        // 2. Crear nuevo proyecto
+        store.createNewProject('Lección de Cardiopatías');
+        state = useStudioStore.getState();
+        expect(state.manifest).not.toBeNull();
+        expect(state.manifest?.metadata.title).toBe('Lección de Cardiopatías');
+        expect(state.lesson?.timeline.events.length).toBe(0);
+        expect(state.lesson?.timeline.checkpoints.length).toBe(0);
+        expect(state.duration).toBe(60.0);
+        expect(state.isDirty).toBe(false);
+    });
 });
+
